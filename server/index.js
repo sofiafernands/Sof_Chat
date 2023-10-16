@@ -29,7 +29,7 @@ await db.execute(`
     `)
 
 //connection new user
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('New connection');
     //disconnet user
     socket.on('disconnect', () => {
@@ -37,20 +37,38 @@ io.on('connection', (socket) => {
     })
     //send message
     socket.on('chat message', async (msg) => {
-        
-        try { 
-            let result;
-    await db.execute({
+        let result;
+     try { 
+       result = await db.execute({
         sql: `INSERT INTO messages (content) VALUES (:msg)`,
         args: { msg },
     });
     }
-    catch (error) {
+     catch (error) {
         console.error(error);
         return;
     }
-    io.emit('chat message', msg, result.lastInsertRowid.toString());
+
+    io.emit('chat message', msg, result.lastInsertRowid.toString() );
     })
+    console.log('auth')
+    console.log(socket.handshake.auth)
+    //recover messages
+    if (!socket.recovered) {        
+        try {
+            const result = await db.execute ({
+                sql: 'SELECT * FROM messages WHERE id > ?',
+                args: [socket.handshake.auth.serverOffset ?? 0],
+            })
+            result.rows.forEach(row => {
+                socket.emit('chat message', row.content, row.id.toString())
+            })
+        }
+        catch (error) {
+            console.error(error);
+            return;
+        }
+    }
 });
 
 app.use(logger('dev'));

@@ -8,15 +8,21 @@
     <script type="module">
         import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js"; /* import socket.io client */
 
-        const socket = io(); /* connect to the socket.io server */
+        const socket = io({
+            auth: {
+                serverOffset: 0, // server time offset
+                username: 'username', // cambiar a un ramdon username
+            }
+        }); /* connect to the socket.io server */
 
         const form = document.getElementById("form"); /* get the form element */
         const input = document.getElementById("input"); /* get the input element */
         const messages = document.getElementById("messages"); /* get the ul element */
 
-        socket.on('chat message', (msg) => { /* listen for the chat message event */
+        socket.on('chat message', (msg, serverOffset) => { /* listen for the chat message event */
             const item = `<li>${msg}</li>`; /* create a list item */
             messages.insertAdjacentHTML('beforeend', item); /* insert the list item into the ul */
+            socket.auth.serverOffset = serverOffset; // save server offset
         });
 
 
