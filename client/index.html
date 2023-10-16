@@ -1,52 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width", initial-scale=1.0" />
-        <title>SofiChat</title>
 
-        <style>
-            *,
-            *::before,
-            *::after {
-                box-sizing: border-box;
-                
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" , initial-scale=1.0" />
+    <title>SofiChat</title>
+    <script type="module">
+        import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js"; /* import socket.io client */
+
+        const socket = io(); /* connect to the socket.io server */
+
+        const form = document.getElementById("form"); /* get the form element */
+        const input = document.getElementById("input"); /* get the input element */
+        const messages = document.getElementById("messages"); /* get the ul element */
+
+        socket.on('chat message', (msg) => { /* listen for the chat message event */
+            const item = `<li>${msg}</li>`; /* create a list item */
+            messages.insertAdjacentHTML('beforeend', item); /* insert the list item into the ul */
+        });
+
+
+        form.addEventListener('submit', (e) => { /* listen for the submit event */
+            e.preventDefault();
+            if (input.value) { /* if the input isn't empty */
+                socket.emit('chat message', input.value); /* emit the message to the server */
+                input.value = ''; /* reset the input */
             }
-            :root {
-                color-scheme: light dark;   
-            }
+        });
+    </script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
 
-            body {
-                margin: 0;
-                font-family: Arial, Helvetica, sans-serif;
-                display: grid;
-                place-content: center;
-                height: 100vh;
-                padding: 36px;
-                grid-template-rows: 1fr;
-            }
+        }
 
-            #chat {
-                border: 1px solid #cccc;
-                border-radius: 5px;
-                overflow: hidden;
-                width: 350px;
-                height: 100%;
-                position: relative;
+        #form {
+            display: flex;
+            gap: 8px;
+            left: 0;
+            padding: 4px;
+            position: absolute;
+            right: 0;
+            bottom: 5px;
+            height: 40px;
+        }
 
-            }
-        </style>
-    </head>
-    <body>
-       <section id = "chat">
-            <form>
-                <input type="text" name="message" id="message" placeholder="Type your message here" 
-                autocomplete="off"/>
-                <button type="submit">Send</button>
-                
-            </form>
+        #input {
+            flex: 1;
+            border: 1px solid #babfc1;
+            border-radius: 20px;
+            padding: 0 8px;
+            margin: 5px;
+            height: 30px;
+
+        }
+
+        #send {
+            background: #5ac7f1;
+            color: #fff;
+            border: 0;
+            margin: 5px;
+            border-radius: 4px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        #send:hover {
+            background: #06fa4384;
+
+        }
+
+        #input:focus {
+            outline: 0;
+        }
+
+        :root {
+            color-scheme: dark;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: grid;
+            place-content: center;
+            height: 100vh;
+            padding: 36px 36px 100px 36px;
+            grid-template-rows: 1fr;
+
+        }
+
+        #chat {
+            border: 1px solid #cccc;
+            border-radius: 5px;
+            overflow: hidden;
+            width: 350px;
+            height: 100%;
+            position: relative;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        #messages li {
+            padding: 5px 1rem;
+        }
+        
+        #messages li:nth-child(odd) {
+            background: #acacac81;
+        }
+    </style>
+</head>
+
+<body>
+    <section id="chat">
+        <ul id="messages">
+
+        </ul>
+        <form id="form">
+            <input type="text" name="message" id="input" placeholder="Type your message here" autocomplete="off" />
+            <button type="submit" id="send">Send</button>
+
+        </form>
 
 
-       </section>
-    </body>
+    </section>
+</body>
+
 </html>
