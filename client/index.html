@@ -3,29 +3,48 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" , initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SofiChat</title>
     <script type="module">
         import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js"; /* import socket.io client */
-
-        const socket = io({
-            auth: {
-                serverOffset: 0, // server time offset
-                username: 'username', // cambiar a un ramdon username
-            }
-        }); /* connect to the socket.io server */
 
         const form = document.getElementById("form"); /* get the form element */
         const input = document.getElementById("input"); /* get the input element */
         const messages = document.getElementById("messages"); /* get the ul element */
 
-        socket.on('chat message', (msg, serverOffset) => { /* listen for the chat message event */
-            const item = `<li>${msg}</li>`; /* create a list item */
+        //get username
+        const getUsername = async  () => {
+            const username = localStorage.getItem('username');
+            if (username) {
+                console.log(`User existed: ${username}`);
+                return username;
+            }
+
+            const res = await fetch('https://random-data-api.com/api/users/random_user') //api username random
+            const { username: randomUsername } = await res.json();
+
+            localStorage.setItem('username', randomUsername);
+            return randomUsername;
+        }
+
+        const socket = io({
+            auth: {
+                username: await getUsername(), // username
+                serverOffset: 0, // server time offset
+            }
+        }); /* connect to the socket.io server */
+
+        //save messages
+        socket.on('chat message', (msg, serverOffset, username) => { /* listen for the chat message event */
+            const item = `<li>
+            <p>${msg}</p>
+            <small>${username}</small>
+        </li>` /* create a list item */
             messages.insertAdjacentHTML('beforeend', item); /* insert the list item into the ul */
             socket.auth.serverOffset = serverOffset; // save server offset
         });
 
-
+        //send messages
         form.addEventListener('submit', (e) => { /* listen for the submit event */
             e.preventDefault();
             if (input.value) { /* if the input isn't empty */
@@ -34,6 +53,7 @@
             }
         });
     </script>
+
     <style>
         *,
         *::before,

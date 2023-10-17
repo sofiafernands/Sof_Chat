@@ -24,13 +24,15 @@ const db = createClient({
 await db.execute(`
     CREATE TABLE IF NOT EXISTS messages( 
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT
+        content TEXT,
+        user TEXT 
         )
     `)
 
-//connection new user
+    //connection new user
 io.on('connection', async (socket) => {
     console.log('New connection');
+
     //disconnet user
     socket.on('disconnect', () => {
         console.log('User disconnected')
@@ -38,10 +40,11 @@ io.on('connection', async (socket) => {
     //send message
     socket.on('chat message', async (msg) => {
         let result;
+        const username = socket.handshake.auth.username ?? 'anonymous';
      try { 
-       result = await db.execute({
-        sql: `INSERT INTO messages (content) VALUES (:msg)`,
-        args: { msg },
+        result = await db.execute({
+        sql: `INSERT INTO messages (content, user) VALUES (:msg, :username)`,
+        args: { msg, username},
     });
     }
      catch (error) {
@@ -49,7 +52,7 @@ io.on('connection', async (socket) => {
         return;
     }
 
-    io.emit('chat message', msg, result.lastInsertRowid.toString() );
+    io.emit('chat message', msg, result.lastInsertRowid.toString(), username );
     })
     console.log('auth')
     console.log(socket.handshake.auth)
@@ -57,11 +60,12 @@ io.on('connection', async (socket) => {
     if (!socket.recovered) {        
         try {
             const result = await db.execute ({
-                sql: 'SELECT * FROM messages WHERE id > ?',
+                sql: 'SELECT id, content, user  FROM messages WHERE id > ?',
                 args: [socket.handshake.auth.serverOffset ?? 0],
             })
+
             result.rows.forEach(row => {
-                socket.emit('chat message', row.content, row.id.toString())
+                socket.emit('chat message', row.content, row.id.toString(), row.user)
             })
         }
         catch (error) {
@@ -71,13 +75,13 @@ io.on('connection', async (socket) => {
     }
 });
 
-app.use(logger('dev'));
+    app.use(logger('dev'));
 
-app.get('/', (req, res) => {
-    //cwd(currente working directory) is the folder in which the process(node) has been initialized, in this case it is the client folder.
-    res.sendFile(process.cwd() + '/client/index.html')
-})
+    app.get('/', (req, res) => {
+        //cwd(currente working directory) is the folder in which the process(node) has been initialized, in this case it is the client folder.
+        res.sendFile(process.cwd() + '/client/index.html')
+    })
 
-server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-})
+    server.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    })
